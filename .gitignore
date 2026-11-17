@@ -17,4 +17,5 @@ __pycache__/
 data/raw/*.csv
 data/cache/*.sqlite
 data/cache/*.png
+data/cache/*.pdf
 src/infrastructure/ml/artifacts/*.joblib
