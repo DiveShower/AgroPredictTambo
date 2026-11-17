@@ -29,34 +29,13 @@ def extract_training_matrix(df: pd.DataFrame) -> pd.DataFrame:
     return df.loc[:, list(FEATURE_COLUMNS)].copy()
 
 
-def _compute_thi_rolling_avg_3h(
-    conditions: WeatherConditions,
-    recent_history: Sequence[WeatherConditions],
-) -> float:
-    """Calcula el promedio móvil de ITH sobre hasta las últimas 3 observaciones."""
-    if not recent_history:
-        return round(
-            THI_Score.calculate(
-                conditions.temperature_c,
-                conditions.relative_humidity,
-            ).value,
-            2,
-        )
-    window = recent_history[-3:]
-    thi_values = [
-        THI_Score.calculate(obs.temperature_c, obs.relative_humidity).value
-        for obs in window
-    ]
-    return round(sum(thi_values) / len(thi_values), 2)
-
-
 def build_feature_vector(
     conditions: WeatherConditions,
     recent_history: Sequence[WeatherConditions] = (),
     nocturnal_debt_hours: int = 0,
 ) -> list[float]:
     """Construye el vector ordenado de 8 features float para inferencia puntual."""
-    thi_rolling_avg_3h = _compute_thi_rolling_avg_3h(conditions, recent_history)
+    thi_avg_3h = THI_Score.rolling_average(conditions, recent_history, window=3)
     clamped_debt = max(0, min(6, nocturnal_debt_hours))
     return [
         float(conditions.temperature_c),
@@ -65,7 +44,7 @@ def build_feature_vector(
         float(conditions.solar_radiation_wm2),
         float(conditions.timestamp.hour),
         float(conditions.wet_bulb_depression),
-        float(thi_rolling_avg_3h),
+        float(thi_avg_3h),
         float(clamped_debt),
     ]
 
@@ -75,10 +54,6 @@ def build_inference_frame(
     recent_history: Sequence[WeatherConditions] = (),
     nocturnal_debt_hours: int = 0,
 ) -> pd.DataFrame:
-    """Construye un DataFrame de 1 fila con nombres de columnas idénticos al entrenamiento."""
-    vector = build_feature_vector(
-        conditions,
-        recent_history=recent_history,
-        nocturnal_debt_hours=nocturnal_debt_hours,
-    )
-    return pd.DataFrame([vector], columns=list(FEATURE_COLUMNS))
+    """Construye un DataFrame de 1 fila con columnas idénticas al entrenamiento."""
+    vec = build_feature_vector(conditions, recent_history, nocturnal_debt_hours)
+    return pd.DataFrame([vec], columns=list(FEATURE_COLUMNS))
