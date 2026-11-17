@@ -18,6 +18,12 @@ class ResourceSavings:
     energy_saved_kwh: float
     energy_saved_pct: float
 
+    @staticmethod
+    def _delta_and_pct(baseline: float, current: float) -> tuple[float, float]:
+        saved = max(0.0, baseline - current)
+        pct = (saved / baseline) * 100.0 if baseline > 0.0 else 0.0
+        return round(saved, 2), round(pct, 2)
+
     @classmethod
     def calculate(
         cls,
@@ -28,36 +34,24 @@ class ResourceSavings:
         predictive_energy_kwh: float,
     ) -> "ResourceSavings":
         """Calcula ahorros absolutos y porcentuales evitando divisiones por cero."""
-        water_saved = max(0.0, baseline_water_liters - predictive_water_liters)
-        water_pct = (
-            (water_saved / baseline_water_liters) * 100.0
-            if baseline_water_liters > 0.0
-            else 0.0
+        water_saved, water_pct = cls._delta_and_pct(
+            baseline_water_liters, predictive_water_liters
         )
-
-        combined_saved = max(0.0, legacy_nozzle_water_liters - predictive_water_liters)
-        combined_pct = (
-            (combined_saved / legacy_nozzle_water_liters) * 100.0
-            if legacy_nozzle_water_liters > 0.0
-            else 0.0
+        _, combined_pct = cls._delta_and_pct(
+            legacy_nozzle_water_liters, predictive_water_liters
         )
-
-        energy_saved = max(0.0, baseline_energy_kwh - predictive_energy_kwh)
-        energy_pct = (
-            (energy_saved / baseline_energy_kwh) * 100.0
-            if baseline_energy_kwh > 0.0
-            else 0.0
+        energy_saved, energy_pct = cls._delta_and_pct(
+            baseline_energy_kwh, predictive_energy_kwh
         )
-
         return cls(
             baseline_water_liters=round(baseline_water_liters, 2),
             predictive_water_liters=round(predictive_water_liters, 2),
-            water_saved_liters=round(water_saved, 2),
-            water_saved_pct=round(water_pct, 2),
+            water_saved_liters=water_saved,
+            water_saved_pct=water_pct,
             legacy_nozzle_water_liters=round(legacy_nozzle_water_liters, 2),
-            combined_water_saved_pct=round(combined_pct, 2),
+            combined_water_saved_pct=combined_pct,
             baseline_energy_kwh=round(baseline_energy_kwh, 2),
             predictive_energy_kwh=round(predictive_energy_kwh, 2),
-            energy_saved_kwh=round(energy_saved, 2),
-            energy_saved_pct=round(energy_pct, 2),
+            energy_saved_kwh=energy_saved,
+            energy_saved_pct=energy_pct,
         )
