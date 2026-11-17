@@ -3,5 +3,13 @@
   "venvPath": ".",
   "venv": "venv",
   "pythonVersion": "3.12",
-  "typeCheckingMode": "basic"
+  "typeCheckingMode": "basic",
+  "executionEnvironments": [
+    {
+      "root": "src/infrastructure/ui/desktop",
+      "extraPaths": ["."],
+      "reportCallIssue": "none",
+      "reportArgumentType": "none"
+    }
+  ]
 }
