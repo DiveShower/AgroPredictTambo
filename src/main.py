@@ -28,21 +28,18 @@ from src.infrastructure.weather_api.open_meteo_adapter import OpenMeteoAdapter
 
 
 def build_cli_controller(force_heatwave: bool = False) -> CliController:
-    """Ensambla instancias únicas de repositorios, adaptadores y casos de uso."""
     use_mock = force_heatwave or os.getenv("WEATHER_PROVIDER", "open_meteo") == "mock"
     weather = MockWeatherAdapter("heatwave") if use_mock else OpenMeteoAdapter()
     cache = SqliteWeatherCacheAdapter()
     if not cache.is_cache_valid():
         cache.save_forecast(MockWeatherAdapter("heatwave").get_hourly_forecast(-31.25, -61.48))
     repo, predictor = InMemorySectorRepository(), SklearnPredictorAdapter()
-    notifier, relay = TelegramNotifierAdapter(), MockRelayAdapter()
-    savings_uc = CalculateSavingsUseCase()
+    notifier, relay, savings_uc = TelegramNotifierAdapter(), MockRelayAdapter(), CalculateSavingsUseCase()
     return CliController(
-        predict_uc=PredictSectorStressUseCase(weather, repo, predictor, notifier, relay, cache),
-        savings_uc=savings_uc,
-        toggle_uc=ToggleSectorOccupancyUseCase(repo),
-        status_uc=GetFarmStatusUseCase(repo, weather),
-        report_uc=GenerateSustainabilityReportUseCase(PdfSustainabilityReportAdapter(), savings_uc),
+        PredictSectorStressUseCase(weather, repo, predictor, notifier, relay, cache),
+        savings_uc, ToggleSectorOccupancyUseCase(repo),
+        GetFarmStatusUseCase(repo, weather),
+        GenerateSustainabilityReportUseCase(PdfSustainabilityReportAdapter(), savings_uc),
     )
 
 
@@ -52,9 +49,11 @@ def main(argv: list[str] | None = None) -> int:
     for flag in ("--desktop", "--bot", "--cli", "--demo-heatwave", "--benchmark"):
         p.add_argument(flag, action="store_true")
     args = p.parse_args(argv)
+    if args.desktop:
+        from src.infrastructure.ui.desktop.app import run_desktop_app
+        return run_desktop_app(force_heatwave=args.demo_heatwave)
     ctrl = build_cli_controller(force_heatwave=args.demo_heatwave or args.benchmark)
     return run_cli(ctrl, benchmark_mode=args.benchmark)
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
