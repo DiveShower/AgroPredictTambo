@@ -1,0 +1,59 @@
+/* Hoja de estilo industrial SCADA Oscuro — AgroChallenge 2026 */
+QMainWindow, QWidget {
+    background-color: #12181f;
+    color: #ecf0f1;
+    font-family: "Sans Serif";
+    font-size: 13px;
+}
+
+QFrame#SectorCard {
+    background-color: #1b2430;
+    border: 2px solid #2c3e50;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+QFrame#ThiGauge {
+    background-color: #1b2430;
+    border: 1px solid #34495e;
+    border-radius: 6px;
+    padding: 8px;
+}
+
+QLabel#HeaderTitle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #00d2d3;
+}
+
+QPushButton {
+    background-color: #2980b9;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 14px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #3498db;
+}
+
+QPushButton#EmergencyBtn {
+    background-color: #c0392b;
+}
+
+QTabWidget::pane {
+    border: 1px solid #2c3e50;
+}
+
+QTabBar::tab {
+    background-color: #1b2430;
+    color: #bdc3c7;
+    padding: 8px 16px;
+}
+
+QTabBar::tab:selected {
+    background-color: #2980b9;
+    color: #ffffff;
+}
