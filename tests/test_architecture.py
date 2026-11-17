@@ -26,14 +26,16 @@ def test_init_files_are_zero_bytes() -> None:
 
 def test_anti_bloat_and_no_relative_imports() -> None:
     """Máximo 60 líneas por archivo, sin archivos acumuladores ni imports relativos."""
-    for py_file in iter_python_files(SRC_DIR) + iter_python_files(SCRIPTS_DIR):
+    for py_file in (
+        iter_python_files(SRC_DIR)
+        + iter_python_files(TESTS_DIR)
+        + iter_python_files(SCRIPTS_DIR)
+    ):
         assert py_file.name not in FORBIDDEN_NAMES, f"Archivo prohibido: {py_file}"
         if py_file.name == "__init__.py":
             continue
         lines = py_file.read_text(encoding="utf-8").splitlines()
-        assert len(lines) <= MAX_LINES, (
-            f"{py_file} tiene {len(lines)} líneas (> {MAX_LINES})"
-        )
+        assert len(lines) <= MAX_LINES, f"{py_file}: {len(lines)} > {MAX_LINES}"
         _, levels = extract_imports(py_file)
         assert all(lvl == 0 for lvl in levels), f"Import relativo en {py_file}"
 
