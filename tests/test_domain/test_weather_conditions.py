@@ -19,12 +19,7 @@ def test_valid_weather_conditions_and_wet_bulb_depression(
 
 
 def test_saturated_air_has_near_zero_wet_bulb_depression() -> None:
-    saturated = WeatherConditions(
-        temperature_c=25.0,
-        relative_humidity=100.0,
-        wind_speed_kmh=5.0,
-        timestamp=datetime(2026, 1, 15, 7, 0),
-    )
+    saturated = WeatherConditions(25.0, 100.0, 5.0, datetime(2026, 1, 15, 7, 0))
     assert saturated.wet_bulb_depression == 0.0
 
 
@@ -46,17 +41,12 @@ def test_invalid_weather_raises_domain_exception(
     rad: float,
 ) -> None:
     with pytest.raises(InvalidWeatherException):
-        WeatherConditions(
-            temperature_c=temp_c,
-            relative_humidity=rh,
-            wind_speed_kmh=wind,
-            timestamp=datetime(2026, 1, 15, 12, 0),
-            solar_radiation_wm2=rad,
-        )
+        WeatherConditions(temp_c, rh, wind, datetime(2026, 1, 15, 12, 0), rad)
 
 
 def test_weather_conditions_is_immutable(
     sample_temperate_weather: WeatherConditions,
 ) -> None:
+    field_name = "temperature_c"
     with pytest.raises(FrozenInstanceError):
-        sample_temperate_weather.temperature_c = 30.0  # type: ignore[misc]
+        setattr(sample_temperate_weather, field_name, 30.0)
