@@ -29,7 +29,9 @@ class Sector:
         """Calcula el umbral de peligro ajustado por deuda térmica nocturna."""
         return round(self.thi_threshold_danger - max(0.0, nocturnal_penalty), 2)
 
-    def evaluate_stress_level(self, thi_val: float, nocturnal_penalty: float = 0.0) -> int:
+    def evaluate_stress_level(
+        self, thi_val: float, nocturnal_penalty: float = 0.0
+    ) -> int:
         """Clasifica el nivel de estrés (0, 1 o 2) según los umbrales del sector."""
         if thi_val < self.effective_alert_threshold(nocturnal_penalty):
             return 0

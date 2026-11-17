@@ -1,6 +1,6 @@
 """Contrato abstracto para proveedores de condiciones meteorológicas y pronóstico."""
 
-from typing import List, Protocol
+from typing import Protocol
 
 from src.domain.value_objects.weather_conditions import WeatherConditions
 
@@ -17,6 +17,6 @@ class IWeatherProvider(Protocol):
         lat: float,
         lon: float,
         hours: int = 24,
-    ) -> List[WeatherConditions]:
+    ) -> list[WeatherConditions]:
         """Obtiene el pronóstico horario para las próximas horas solicitadas."""
         ...

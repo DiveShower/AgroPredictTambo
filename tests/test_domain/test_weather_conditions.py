@@ -2,6 +2,7 @@
 
 from dataclasses import FrozenInstanceError
 from datetime import datetime
+
 import pytest
 
 from src.domain.exceptions.invalid_weather_exception import InvalidWeatherException

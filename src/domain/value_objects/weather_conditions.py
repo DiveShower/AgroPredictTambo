@@ -1,8 +1,8 @@
 """Value Object inmutable que representa condiciones meteorológicas validadas."""
 
+import math
 from dataclasses import dataclass
 from datetime import datetime
-import math
 
 from src.domain.exceptions.invalid_weather_exception import InvalidWeatherException
 

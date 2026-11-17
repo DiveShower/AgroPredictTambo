@@ -1,0 +1,45 @@
+{
+  "accuracy": 0.9583,
+  "recall_danger": 1.0,
+  "precision_per_class": [
+    0.9964,
+    0.929,
+    0.8714
+  ],
+  "recall_per_class": [
+    0.9619,
+    0.9351,
+    1.0
+  ],
+  "confusion_matrix": [
+    [
+      278,
+      11,
+      0
+    ],
+    [
+      1,
+      144,
+      9
+    ],
+    [
+      0,
+      0,
+      61
+    ]
+  ],
+  "baseline_tree_accuracy": 0.8909,
+  "static_thi_accuracy": 0.8571,
+  "feature_columns": [
+    "temperature_c",
+    "relative_humidity",
+    "wind_speed_kmh",
+    "solar_radiation_wm2",
+    "hour_of_day",
+    "wet_bulb_depression",
+    "thi_rolling_avg_3h",
+    "nocturnal_debt_hours"
+  ],
+  "train_rows": 2016,
+  "test_rows": 504
+}

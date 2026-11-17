@@ -28,7 +28,5 @@ class Farm:
     def total_occupied_cows(self) -> int:
         """Suma la capacidad de vacas de los sectores actualmente ocupados."""
         return sum(
-            sector.cow_capacity
-            for sector in self.sectors
-            if sector.current_occupancy
+            sector.cow_capacity for sector in self.sectors if sector.current_occupancy
         )

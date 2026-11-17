@@ -1,6 +1,6 @@
 """Contrato abstracto para persistencia y consulta de sectores del tambo."""
 
-from typing import List, Protocol
+from typing import Protocol
 
 from src.domain.entities.sector import Sector
 
@@ -8,7 +8,7 @@ from src.domain.entities.sector import Sector
 class ISectorRepository(Protocol):
     """Puerto de repositorio para administrar los sectores del establecimiento."""
 
-    def get_all_sectors(self) -> List[Sector]:
+    def get_all_sectors(self) -> list[Sector]:
         """Retorna todos los sectores registrados del tambo."""
         ...
 

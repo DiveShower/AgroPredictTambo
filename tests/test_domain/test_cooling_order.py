@@ -1,6 +1,7 @@
 """Tests unitarios para CoolingOrder y CoolingCycle (micro-ciclos y anti-mastitis)."""
 
 from datetime import datetime
+
 import pytest
 
 from src.domain.entities.cooling_order import CoolingOrder
@@ -25,8 +26,14 @@ def test_cooling_cycle_for_stress_levels_and_anti_mastitis() -> None:
     assert (comfort.water_mist_seconds, comfort.fan_ventilation_seconds) == (0, 0)
     assert comfort.water_duty_cycle == 0.0
     assert (alert.water_mist_seconds, alert.fan_ventilation_seconds) == (0, 270)
-    assert (danger_concrete.water_mist_seconds, danger_concrete.fan_ventilation_seconds) == (40, 270)
-    assert (danger_compost.water_mist_seconds, danger_compost.fan_ventilation_seconds) == (0, 270)
+    assert (
+        danger_concrete.water_mist_seconds,
+        danger_concrete.fan_ventilation_seconds,
+    ) == (40, 270)
+    assert (
+        danger_compost.water_mist_seconds,
+        danger_compost.fan_ventilation_seconds,
+    ) == (0, 270)
 
 
 def test_cooling_order_is_active_flag() -> None:

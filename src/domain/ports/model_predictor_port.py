@@ -1,6 +1,7 @@
 """Contrato abstracto para inferencia predictiva de nivel de estrés térmico."""
 
-from typing import Protocol, Sequence
+from collections.abc import Sequence
+from typing import Protocol
 
 from src.domain.value_objects.weather_conditions import WeatherConditions
 

@@ -30,11 +30,15 @@ def test_thi_calculation_matches_nrc_formula(
 
 def test_thi_custom_high_production_thresholds() -> None:
     # 23.0°C y 55% HR -> ITH ~ 69.53 (< 70.0 Confort)
-    comfort = THI_Score.calculate(23.0, 55.0, threshold_alert=70.0, threshold_danger=76.0)
+    comfort = THI_Score.calculate(
+        23.0, 55.0, threshold_alert=70.0, threshold_danger=76.0
+    )
     # 24.5°C y 65% HR -> ITH ~ 72.52 (>= 70.0 Alerta para alta producción)
     alert = THI_Score.calculate(24.5, 65.0, threshold_alert=70.0, threshold_danger=76.0)
     # 27.5°C y 65% HR -> ITH ~ 77.01 (>= 76.0 Peligro para alta producción)
-    danger = THI_Score.calculate(27.5, 65.0, threshold_alert=70.0, threshold_danger=76.0)
+    danger = THI_Score.calculate(
+        27.5, 65.0, threshold_alert=70.0, threshold_danger=76.0
+    )
 
     assert comfort.stress_level == 0
     assert alert.stress_level == 1
@@ -43,8 +47,8 @@ def test_thi_custom_high_production_thresholds() -> None:
 
 def test_thi_boundary_thresholds() -> None:
     # Verificación de límites exactos en umbrales estándar 72 / 78
-    below_alert = THI_Score.calculate(24.0, 60.0)   # 71.36 < 72.0
-    above_alert = THI_Score.calculate(25.0, 60.0)   # 72.79 >= 72.0
+    below_alert = THI_Score.calculate(24.0, 60.0)  # 71.36 < 72.0
+    above_alert = THI_Score.calculate(25.0, 60.0)  # 72.79 >= 72.0
     above_danger = THI_Score.calculate(28.5, 62.0)  # 78.10 >= 78.0
 
     assert below_alert.stress_level == 0

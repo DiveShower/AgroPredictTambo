@@ -1,6 +1,7 @@
 """Fixtures compartidas para la suite de pruebas unitarias."""
 
 from datetime import datetime
+
 import pytest
 
 from src.domain.entities.farm import Farm

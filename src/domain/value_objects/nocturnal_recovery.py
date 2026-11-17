@@ -1,7 +1,7 @@
 """Value Object para recuperación térmica nocturna y deuda calórica acumulada."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 from src.domain.value_objects.thi_score import THI_Score
 from src.domain.value_objects.weather_conditions import WeatherConditions

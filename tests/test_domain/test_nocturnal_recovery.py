@@ -1,6 +1,7 @@
 """Tests unitarios para NocturnalRecovery y cálculo de deuda térmica."""
 
 from datetime import datetime
+
 import pytest
 
 from src.domain.value_objects.nocturnal_recovery import NocturnalRecovery
@@ -35,7 +36,7 @@ def test_partial_and_tropical_night_debt_penalties() -> None:
     partial = NocturnalRecovery.from_night_conditions(mixed_night)
 
     # 0 horas frescas -> deuda máxima 6h, penalización tope 3.0
-    tropical_night = [_make_night_obs(h, 27.0, rh=75.0) for h in range(0, 8)]
+    tropical_night = [_make_night_obs(h, 27.0, rh=75.0) for h in range(8)]
     tropical = NocturnalRecovery.from_night_conditions(tropical_night)
 
     assert partial.cool_hours_count == 2

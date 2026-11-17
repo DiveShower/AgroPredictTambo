@@ -458,31 +458,39 @@ from dataclasses import dataclass
 from datetime import datetime
 from src.domain.exceptions.invalid_weather_exception import InvalidWeatherException
 
+
 @dataclass(frozen=True)
 class WeatherConditions:
-    temperature_c: float            # Temperatura ambiente en °C (-15.0 a 55.0)
-    relative_humidity: float        # Humedad relativa en % (0.0 a 100.0)
-    wind_speed_kmh: float           # Velocidad de viento en km/h (>= 0.0)
-    timestamp: datetime             # Momento de la observación o pronóstico
-    solar_radiation_wm2: float = 0.0# Radiación solar de onda corta en W/m² (>= 0.0)
+    temperature_c: float  # Temperatura ambiente en °C (-15.0 a 55.0)
+    relative_humidity: float  # Humedad relativa en % (0.0 a 100.0)
+    wind_speed_kmh: float  # Velocidad de viento en km/h (>= 0.0)
+    timestamp: datetime  # Momento de la observación o pronóstico
+    solar_radiation_wm2: float = 0.0  # Radiación solar de onda corta en W/m² (>= 0.0)
 
     def __post_init__(self) -> None:
         if not (-15.0 <= self.temperature_c <= 55.0):
-            raise InvalidWeatherException(f"Temperatura fuera de rango físico: {self.temperature_c} °C")
+            raise InvalidWeatherException(
+                f"Temperatura fuera de rango físico: {self.temperature_c} °C"
+            )
         if not (0.0 <= self.relative_humidity <= 100.0):
-            raise InvalidWeatherException(f"Humedad fuera de rango: {self.relative_humidity}%")
+            raise InvalidWeatherException(
+                f"Humedad fuera de rango: {self.relative_humidity}%"
+            )
         if self.wind_speed_kmh < 0.0 or self.solar_radiation_wm2 < 0.0:
-            raise InvalidWeatherException("El viento y la radiación solar no pueden ser negativos.")
+            raise InvalidWeatherException(
+                "El viento y la radiación solar no pueden ser negativos."
+            )
 ```
 
 ### 5.2 Value Object: `src/domain/value_objects/thi_score.py`
 ```python
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class THI_Score:
     value: float
-    stress_level: int           # 0 = Confort, 1 = Alerta, 2 = Peligro
+    stress_level: int  # 0 = Confort, 1 = Alerta, 2 = Peligro
 
     @classmethod
     def calculate(
@@ -508,22 +516,27 @@ class THI_Score:
 ```python
 from dataclasses import dataclass
 
+
 @dataclass
 class Sector:
-    sector_id: str                      # Ej: "corral_espera", "comederos", "sombras"
-    name: str                           # Nombre descriptivo
-    cow_capacity: int                   # Cantidad máxima de animales
-    current_occupancy: bool             # True = vacas presentes en el sector
-    thi_threshold_alert: float = 72.0   # 72.0 rodeo gral / 68.0-70.0 alta producción
+    sector_id: str  # Ej: "corral_espera", "comederos", "sombras"
+    name: str  # Nombre descriptivo
+    cow_capacity: int  # Cantidad máxima de animales
+    current_occupancy: bool  # True = vacas presentes en el sector
+    thi_threshold_alert: float = 72.0  # 72.0 rodeo gral / 68.0-70.0 alta producción
     thi_threshold_danger: float = 78.0  # 78.0 rodeo gral / 76.0 alta producción
-    allows_water_sprinkling: bool = True# True en piso de hormigón; False en cama orgánica (anti-mastitis)
-    sprinkler_count: int = 10           # Cantidad de picos aspersores de 1.3 L/min en el sector
-    fan_count: int = 4                  # Cantidad de ventiladores de 0.75 kW en el sector
+    allows_water_sprinkling: bool = (
+        True  # True en piso de hormigón; False en cama orgánica (anti-mastitis)
+    )
+    sprinkler_count: int = 10  # Cantidad de picos aspersores de 1.3 L/min en el sector
+    fan_count: int = 4  # Cantidad de ventiladores de 0.75 kW en el sector
 
     def set_occupancy(self, occupied: bool) -> None:
         self.current_occupancy = occupied
 
-    def evaluate_stress_level(self, thi_val: float, nocturnal_penalty: float = 0.0) -> int:
+    def evaluate_stress_level(
+        self, thi_val: float, nocturnal_penalty: float = 0.0
+    ) -> int:
         alert_limit = self.thi_threshold_alert - nocturnal_penalty
         danger_limit = self.thi_threshold_danger - nocturnal_penalty
         if thi_val < alert_limit:
@@ -533,7 +546,9 @@ class Sector:
         return 2
 
     def requires_cooling(self, thi_val: float, nocturnal_penalty: float = 0.0) -> bool:
-        return self.current_occupancy and (self.evaluate_stress_level(thi_val, nocturnal_penalty) > 0)
+        return self.current_occupancy and (
+            self.evaluate_stress_level(thi_val, nocturnal_penalty) > 0
+        )
 ```
 
 ### 5.4 Entidad: `src/domain/entities/cooling_order.py` y Value Objects Complementarios
@@ -541,14 +556,17 @@ class Sector:
 from dataclasses import dataclass
 from datetime import datetime
 
+
 @dataclass(frozen=True)
 class CoolingOrder:
     sector_id: str
-    stress_level: int           # 0 = Confort, 1 = Alerta, 2 = Peligro
-    water_mist_seconds: int     # 40s si Nivel 2 y sector.allows_water_sprinkling == True; 0s en otro caso
-    fan_ventilation_seconds: int# 270s en Nivel 1 o 2; 0s en Nivel 0
-    target_time: datetime       # Hora proyectada para el ciclo
-    justification: str          # Descripción técnica para el operador (ej. protección mastitis o pre-enfriado)
+    stress_level: int  # 0 = Confort, 1 = Alerta, 2 = Peligro
+    water_mist_seconds: (
+        int  # 40s si Nivel 2 y sector.allows_water_sprinkling == True; 0s en otro caso
+    )
+    fan_ventilation_seconds: int  # 270s en Nivel 1 o 2; 0s en Nivel 0
+    target_time: datetime  # Hora proyectada para el ciclo
+    justification: str  # Descripción técnica para el operador (ej. protección mastitis o pre-enfriado)
 ```
 
 * **Contratos de Value Objects Complementarios (`src/domain/value_objects/`):**
@@ -565,15 +583,19 @@ class CoolingOrder:
 from typing import Protocol, List
 from src.domain.value_objects.weather_conditions import WeatherConditions
 
+
 class IWeatherProvider(Protocol):
     def get_current_weather(self, lat: float, lon: float) -> WeatherConditions: ...
-    def get_hourly_forecast(self, lat: float, lon: float, hours: int = 24) -> List[WeatherConditions]: ...
+    def get_hourly_forecast(
+        self, lat: float, lon: float, hours: int = 24
+    ) -> List[WeatherConditions]: ...
 ```
 
 #### `src/domain/ports/model_predictor_port.py`
 ```python
 from typing import Protocol, Sequence
 from src.domain.value_objects.weather_conditions import WeatherConditions
+
 
 class IModelPredictor(Protocol):
     def predict_stress_level(
@@ -589,6 +611,7 @@ class IModelPredictor(Protocol):
 from typing import Protocol, List
 from src.domain.entities.sector import Sector
 
+
 class ISectorRepository(Protocol):
     def get_all_sectors(self) -> List[Sector]: ...
     def get_by_id(self, sector_id: str) -> Sector: ...
@@ -599,6 +622,7 @@ class ISectorRepository(Protocol):
 ```python
 from typing import Protocol, List
 from src.domain.value_objects.weather_conditions import WeatherConditions
+
 
 class IWeatherCache(Protocol):
     def save_forecast(self, conditions_list: List[WeatherConditions]) -> None: ...
@@ -611,6 +635,7 @@ class IWeatherCache(Protocol):
 from typing import Protocol
 from src.domain.entities.heat_stress_alert import HeatStressAlert
 
+
 class INotifier(Protocol):
     def send_alert(self, alert: HeatStressAlert) -> bool: ...
 ```
@@ -619,9 +644,12 @@ class INotifier(Protocol):
 ```python
 from typing import Protocol
 
+
 class IHardwareController(Protocol):
     def activate_water_valve(self, sector_id: str, duration_seconds: int) -> bool: ...
-    def activate_ventilation_fan(self, sector_id: str, duration_seconds: int) -> bool: ...
+    def activate_ventilation_fan(
+        self, sector_id: str, duration_seconds: int
+    ) -> bool: ...
     def emergency_shutoff_all(self) -> None: ...
 ```
 
@@ -630,8 +658,11 @@ class IHardwareController(Protocol):
 from typing import Protocol
 from src.domain.value_objects.resource_savings import ResourceSavings
 
+
 class IReportGenerator(Protocol):
-    def generate_sustainability_pdf(self, farm_name: str, savings: ResourceSavings, output_path: str) -> str: ...
+    def generate_sustainability_pdf(
+        self, farm_name: str, savings: ResourceSavings, output_path: str
+    ) -> str: ...
 ```
 
 ### 5.6 Especificación de la Interfaz Nativa de Escritorio (PyQt6 Desktop SCADA)
@@ -1154,18 +1185,40 @@ Para que al clonar el repositorio y correr la app por primera vez la pantalla no
 Punto de Entrada Principal (Composition Root)
 AgroChallenge 2026 - Nestlé Conecta
 """
+
 import argparse
 from dotenv import load_dotenv
+
 
 def main() -> None:
     load_dotenv()
 
-    parser = argparse.ArgumentParser(description="AgroChallenge 2026 - Sistema Predictivo de Estrés Térmico")
-    parser.add_argument("--desktop", action="store_true", help="Iniciar App Nativa de Escritorio (PyQt6 + Bot Worker)")
-    parser.add_argument("--bot", action="store_true", help="Iniciar Bot de Telegram en modo standalone (headless)")
-    parser.add_argument("--cli", action="store_true", help="Iniciar Interfaz de Consola Interactiva")
-    parser.add_argument("--demo-heatwave", action="store_true", help="Forzar perfil simulado de ola de calor")
-    parser.add_argument("--benchmark", action="store_true", help="Ejecutar simulación analítica de ahorro de 24h")
+    parser = argparse.ArgumentParser(
+        description="AgroChallenge 2026 - Sistema Predictivo de Estrés Térmico"
+    )
+    parser.add_argument(
+        "--desktop",
+        action="store_true",
+        help="Iniciar App Nativa de Escritorio (PyQt6 + Bot Worker)",
+    )
+    parser.add_argument(
+        "--bot",
+        action="store_true",
+        help="Iniciar Bot de Telegram en modo standalone (headless)",
+    )
+    parser.add_argument(
+        "--cli", action="store_true", help="Iniciar Interfaz de Consola Interactiva"
+    )
+    parser.add_argument(
+        "--demo-heatwave",
+        action="store_true",
+        help="Forzar perfil simulado de ola de calor",
+    )
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Ejecutar simulación analítica de ahorro de 24h",
+    )
 
     args = parser.parse_args()
 
@@ -1175,14 +1228,18 @@ def main() -> None:
 
     if args.bot:
         from src.infrastructure.ui.telegram_bot.bot_service import run_bot
+
         run_bot(force_heatwave=args.demo_heatwave)
     elif args.cli or args.benchmark:
         from src.infrastructure.ui.cli.console_runner import run_cli
+
         run_cli(benchmark_mode=args.benchmark, force_heatwave=args.demo_heatwave)
     else:
         # Por defecto inicia la Estación Base de Escritorio (con TelegramBotWorker sincronizado si hay token)
         from src.infrastructure.ui.desktop.app import run_desktop_app
+
         run_desktop_app(force_heatwave=args.demo_heatwave)
+
 
 if __name__ == "__main__":
     main()
