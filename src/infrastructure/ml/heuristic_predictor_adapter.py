@@ -30,11 +30,7 @@ class HeuristicPredictorAdapter(IModelPredictor):
             rad_pen = 0.5 + 2.0 * min(1.0, (cond.solar_radiation_wm2 - 500.0) / 500.0)
         inertia = 0.0
         if hist:
-            w = hist[-3:]
-            avg_thi = sum(
-                THI_Score.calculate(c.temperature_c, c.relative_humidity).value
-                for c in w
-            ) / len(w)
+            avg_thi = THI_Score.rolling_average(cond, hist, window=3)
             inertia = max(0.0, 0.15 * (avg_thi - 72.0))
         debt_pen = 0.35 * max(0, min(6, debt))
         wind_cooling = 0.3 * (cond.wind_speed_kmh / 3.6)
