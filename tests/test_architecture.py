@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT_DIR / "src"
 SCRIPTS_DIR = ROOT_DIR / "data" / "scripts"
-MAX_LINES = 120
+MAX_LINES = 60
 FORBIDDEN_NAMES = {"entities.py", "ports.py", "handlers.py", "views.py", "utils.py"}
 EXTERNAL_FORBIDDEN = {
     "PyQt6",
@@ -71,6 +71,7 @@ def test_clean_architecture_ring_boundaries() -> None:
         ring = rel.parts[0] if len(rel.parts) > 1 else "root"
         modules, _ = _extract_imports(py_file)
         roots = {mod.split(".")[0] for mod in modules}
+        assert "data" not in roots, f"Import prohibido de data.* en src: {py_file}"
         if ring == "domain":
             assert not (roots & EXTERNAL_FORBIDDEN), (
                 f"Import externo en domain: {py_file}"
