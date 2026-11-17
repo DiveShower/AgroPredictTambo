@@ -11,13 +11,7 @@ from data.scripts.bioclimatic_enricher import (
     enrich_bioclimatic_features,
 )
 
-__all__ = [
-    "DEFAULT_OUTPUT_PATH",
-    "EXPECTED_COLUMNS",
-    "enrich_bioclimatic_features",
-    "generate_synthetic_weather_df",
-    "save_synthetic_dataset",
-]
+__all__ = ["EXPECTED_COLUMNS"]
 
 
 def generate_synthetic_weather_df(n_hours: int = 2400, seed: int = 42) -> pd.DataFrame:
@@ -28,9 +22,8 @@ def generate_synthetic_weather_df(n_hours: int = 2400, seed: int = 42) -> pd.Dat
     days = np.arange(n_hours, dtype=float) / 24.0
     diurnal = np.sin(2.0 * np.pi * (hrs - 9.0) / 24.0)
     wave = 5.5 * np.sin(2 * np.pi * days / 9) + 2.0 * np.cos(2 * np.pi * days / 23)
-    temp = np.clip(
-        24.5 + wave + 6.5 * diurnal + rng.normal(0.0, 0.8, n_hours), -10.0, 50.0
-    )
+    t_raw = 24.5 + wave + 6.5 * diurnal + rng.normal(0.0, 0.8, n_hours)
+    temp = np.clip(t_raw, -10.0, 50.0)
     rh = np.clip(64.0 - 18.0 * diurnal + rng.normal(0.0, 6.0, n_hours), 15.0, 98.0)
     wind = np.clip(11.0 + 4.0 * diurnal + rng.normal(0.0, 4.5, n_hours), 0.5, 45.0)
     cloud = np.clip(rng.normal(0.88, 0.15, n_hours), 0.2, 1.05)
@@ -53,9 +46,8 @@ def save_synthetic_dataset(
 ) -> Path:
     """Genera y persiste el dataset sintético en CSV sin índice."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    generate_synthetic_weather_df(n_hours=n_hours, seed=seed).to_csv(
-        output_path, index=False
-    )
+    df = generate_synthetic_weather_df(n_hours=n_hours, seed=seed)
+    df.to_csv(output_path, index=False)
     return output_path
 
 
