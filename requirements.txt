@@ -1,0 +1,25 @@
+# Núcleo Científico y Modelado (Python 3.10 / 3.12 LTS Estable)
+numpy>=2.1.0
+pandas>=2.2.3
+scikit-learn>=1.5.2
+joblib>=1.4.2
+
+# Ingesta Climática y Red
+requests>=2.32.3
+python-dotenv>=1.0.1
+
+# Interfaz Nativa de Escritorio (Qt6)
+PyQt6>=6.7.1
+matplotlib>=3.9.2
+
+# Canal Móvil, QR y Reportes PDF
+python-telegram-bot>=21.6
+fpdf2>=2.8.1
+qrcode[pil]>=8.0
+
+# Hardware IoT y Simulación
+pyserial>=3.5
+
+# Calidad y Testing
+pytest>=8.3.3
+pytest-mock>=3.14.0
