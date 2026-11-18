@@ -1,16 +1,12 @@
 """Vista de simulación interactiva con sliders bioclimáticos para el jurado."""
 
-from typing import Optional
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFormLayout, QLabel, QSlider, QVBoxLayout, QWidget
+from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
 from src.adapters.desktop.viewmodels.forecast_viewmodel import ForecastViewModel
-
-
-def _make_slider(min_v: int, max_v: int, val: int) -> QSlider:
-    s = QSlider(Qt.Orientation.Horizontal)
-    s.setRange(min_v, max_v)
-    s.setValue(val)
-    return s
+from src.infrastructure.ui.desktop.components.simulation_slider_group import (
+    SimulationSliderGroup,
+)
 
 
 class SimulationView(QWidget):
@@ -19,40 +15,46 @@ class SimulationView(QWidget):
     def __init__(
         self,
         viewmodel: ForecastViewModel,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
+        """Inicializa sliders agrupados, etiquetas de salida y timer debounce."""
         super().__init__(parent)
         self._viewmodel = viewmodel
         root = QVBoxLayout(self)
-        form = QFormLayout()
+        self.sliders = SimulationSliderGroup(self)
+        self.temp_slider = self.sliders.temp_slider
+        self.rh_slider = self.sliders.rh_slider
+        self.wind_slider = self.sliders.wind_slider
+        self.rad_slider = self.sliders.rad_slider
+        root.addWidget(self.sliders)
 
-        self.temp_slider = _make_slider(15, 45, 34)
-        self.rh_slider = _make_slider(20, 95, 68)
-        self.wind_slider = _make_slider(0, 40, 6)
-        self.rad_slider = _make_slider(0, 1000, 820)
-
-        for lbl, sld in (
-            ("Temperatura (15 a 45 C):", self.temp_slider),
-            ("Humedad Relativa (20 a 95 %):", self.rh_slider),
-            ("Velocidad de Viento (0 a 40 km/h):", self.wind_slider),
-            ("Radiacion Solar (0 a 1000 W/m2):", self.rad_slider),
-        ):
-            sld.valueChanged.connect(self._recalculate)
-            form.addRow(lbl, sld)
-
-        root.addLayout(form)
         self.params_lbl = QLabel()
         self.result_lbl = QLabel()
         self.result_lbl.setObjectName("HeaderTitle")
         root.addWidget(self.params_lbl)
         root.addWidget(self.result_lbl)
-        self._recalculate()
+        self.debounce_timer = QTimer(self)
+        self.debounce_timer.setSingleShot(True)
+        self.debounce_timer.timeout.connect(self._run_simulation)
+        self.sliders.values_changed.connect(self._on_values_changed)
+        self._update_params_label()
+        self._run_simulation()
 
-    def _recalculate(self) -> None:
-        t, rh = float(self.temp_slider.value()), float(self.rh_slider.value())
-        w, rad = float(self.wind_slider.value()), float(self.rad_slider.value())
+    def _update_params_label(self) -> None:
+        t, rh, w, rad = self.sliders.current_values()
+        self.params_lbl.setText(
+            f"Entrada: {t:.0f}C | HR {rh:.0f}% | "
+            f"Viento {w:.0f} km/h | Rad {rad:.0f} W/m2"
+        )
+
+    def _on_values_changed(self) -> None:
+        self._update_params_label()
+        self.debounce_timer.start(80)
+
+    def _run_simulation(self) -> None:
+        t, rh, w, rad = self.sliders.current_values()
         res = self._viewmodel.simulate_custom_conditions(t, rh, w, rad)
-        self.params_lbl.setText(f"Entrada: {t:.0f}C | HR {rh:.0f}% | Viento {w:.0f} km/h | Rad {rad:.0f} W/m2")
         self.result_lbl.setText(
-            f"ITH: {res['thi_value']} ({res['category']}) | Hormigon: {res['concrete_order']} | Compost: {res['compost_order']}"
+            f"ITH: {res['thi_value']} ({res['category']}) | "
+            f"Hormigon: {res['concrete_order']} | Compost: {res['compost_order']}"
         )
