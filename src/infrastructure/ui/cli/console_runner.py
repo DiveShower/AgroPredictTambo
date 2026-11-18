@@ -1,9 +1,9 @@
 """Driver de consola interactivo y runner de simulación benchmark para Konsole."""
 
 from collections.abc import Callable
-from typing import Optional
 
 from src.adapters.cli.cli_controller import CliController
+from src.infrastructure.ui.cli.readline_completer import setup_cli_autocomplete
 
 MENU_HEADER = (
     "\n=== AGRO-PREDICT 2026 | CONSOLA DE DIAGNOSTICO (MVP NIVEL 1) ===\n"
@@ -20,13 +20,14 @@ def run_cli(
     controller: CliController,
     benchmark_mode: bool = False,
     input_fn: Callable[[str], str] = input,
-    output_fn: Callable[[str], Optional[None]] = print,
+    output_fn: Callable[[str], None] = print,
 ) -> int:
     """Inicia la interfaz de línea de comandos o ejecuta la corrida benchmark."""
     if benchmark_mode:
         output_fn(controller.handle_benchmark())
         return 0
 
+    setup_cli_autocomplete()
     while True:
         output_fn(MENU_HEADER)
         choice = input_fn("Seleccione opcion > ").strip()
