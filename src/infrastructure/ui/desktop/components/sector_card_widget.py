@@ -2,8 +2,13 @@
 
 from typing import Any
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QSignalBlocker, pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QFrame, QLabel, QVBoxLayout, QWidget
+
+from src.infrastructure.ui.desktop.components.sector_card_formatter import (
+    format_fan_label,
+    format_water_label,
+)
 
 
 class SectorCardWidget(QFrame):
@@ -18,11 +23,9 @@ class SectorCardWidget(QFrame):
         self._water_rem, self._fan_rem, self._allows_w = 0, 0, True
         lay = QVBoxLayout(self)
         self.title_lbl, self.badge_lbl = QLabel(sector_id), QLabel("CONFORT")
-        self.occ_chk = QCheckBox("OCUPADO (Vacas en sector)")
-        self.occ_chk.setChecked(True)
+        self.occ_chk = QCheckBox("OCUPADO (Vacas en sector)", checked=True)
         self.occ_chk.toggled.connect(self._on_toggled)
-        self.water_lbl = QLabel("Bomba: OFF")
-        self.fan_lbl = QLabel("Ventiladores: OFF")
+        self.water_lbl, self.fan_lbl = QLabel("Bomba: OFF"), QLabel("Ventiladores: OFF")
         ws = self.title_lbl, self.badge_lbl, self.occ_chk, self.water_lbl, self.fan_lbl
         for w in ws:
             lay.addWidget(w)
@@ -32,13 +35,16 @@ class SectorCardWidget(QFrame):
 
     def update_from_state(self, state: dict[str, Any]) -> None:
         """Sincroniza colores, textos sanitarios y contadores desde ScadaViewModel."""
-        s, c = state, state["color_hex"]
+        s = state
         self.title_lbl.setText(f"{s['name']} ({s['capacity']} vacas)")
         self.badge_lbl.setText(f"Estado: {s['status_badge']} — {s['cycle_desc']}")
-        self.setStyleSheet(f"QFrame#SectorCard {{ border: 2px solid {c}; }}")
-        self.occ_chk.blockSignals(True)
-        self.occ_chk.setChecked(bool(s["is_occupied"]))
-        self.occ_chk.blockSignals(False)
+        if (lvl := str(s.get("stress_level", 0))) != self.property("stressLevel"):
+            self.setProperty("stressLevel", lvl)
+            if st := self.style():
+                st.unpolish(self)
+                st.polish(self)
+        with QSignalBlocker(self.occ_chk):
+            self.occ_chk.setChecked(bool(s["is_occupied"]))
         self._allows_w = bool(s["allows_water"])
         self._water_rem, self._fan_rem = int(s["water_seconds"]), int(s["fan_seconds"])
         self._refresh_countdown_labels()
@@ -50,11 +56,5 @@ class SectorCardWidget(QFrame):
         self._refresh_countdown_labels()
 
     def _refresh_countdown_labels(self) -> None:
-        w = "Bomba Aspersion: OFF"
-        if not self._allows_w:
-            w = "ASPERSION BLOQUEADA (Anti-Mastitis)"
-        elif self._water_rem > 0:
-            w = f"Bomba Aspersion: ACTIVA ({self._water_rem}s)"
-        self.water_lbl.setText(w)
-        f = f"Ventiladores: ACTIVOS ({self._fan_rem}s)"
-        self.fan_lbl.setText(f if self._fan_rem > 0 else "Ventiladores: OFF")
+        self.water_lbl.setText(format_water_label(self._allows_w, self._water_rem))
+        self.fan_lbl.setText(format_fan_label(self._fan_rem))
