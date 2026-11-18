@@ -1,16 +1,13 @@
 """Ventana principal de la estación base de monitoreo SCADA (PyQt6)."""
 
-from typing import Optional
 from PyQt6.QtWidgets import QLabel, QMainWindow, QTabWidget, QVBoxLayout, QWidget
+
 from src.adapters.desktop.viewmodels.forecast_viewmodel import ForecastViewModel
 from src.adapters.desktop.viewmodels.savings_viewmodel import SavingsViewModel
 from src.adapters.desktop.viewmodels.scada_viewmodel import ScadaViewModel
 from src.application.dtos.predict_stress_response_dto import PredictStressResponseDTO
-from src.infrastructure.ui.desktop.views.forecast_view import ForecastView
-from src.infrastructure.ui.desktop.views.report_view import ReportView
-from src.infrastructure.ui.desktop.views.savings_view import SavingsView
+from src.infrastructure.ui.desktop.tab_builder import build_tabs
 from src.infrastructure.ui.desktop.views.scada_view import ScadaView
-from src.infrastructure.ui.desktop.views.simulation_view import SimulationView
 from src.infrastructure.ui.desktop.workers.telegram_bot_worker import TelegramBotWorker
 from src.infrastructure.ui.desktop.workers.weather_sync_worker import WeatherSyncWorker
 
@@ -18,34 +15,37 @@ from src.infrastructure.ui.desktop.workers.weather_sync_worker import WeatherSyn
 class MainWindow(QMainWindow):
     """Shell principal con 5 pestañas y conexión de señales a workers QThread."""
 
-    def __init__(self, scada_vm: ScadaViewModel, fore_vm: Optional[ForecastViewModel] = None, sav_vm: Optional[SavingsViewModel] = None, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self,
+        scada_vm: ScadaViewModel,
+        fore_vm: ForecastViewModel | None = None,
+        sav_vm: SavingsViewModel | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
-        self._viewmodel, self.forecast_view = scada_vm, None
+        self._viewmodel = scada_vm
         self.setWindowTitle("AGRO-PREDICT 2026 — Estación SCADA Tambo San José")
         self.resize(1100, 680)
-        central = QWidget(self)
+        self.setCentralWidget(central := QWidget(self))
         lay = QVBoxLayout(central)
-        self.header_lbl = QLabel("[AGRO-PREDICT 2026] Tambo San José (Rafaela, SF) | ONLINE")
-        self.header_lbl.setObjectName("HeaderTitle")
-        self.tabs, self.scada_view = QTabWidget(central), ScadaView(self._viewmodel, self)
-        self.tabs.addTab(self.scada_view, "TAB 1: SCADA TAMBO")
-        if fore_vm:
-            self.forecast_view = ForecastView(fore_vm, self)
-            self.tabs.addTab(self.forecast_view, "TAB 2: CURVA ITH 24H")
-            self.tabs.addTab(SimulationView(fore_vm, self), "TAB 4: SIMULADOR JURADO")
-        if sav_vm:
-            self.tabs.addTab(SavingsView(sav_vm, self), "TAB 3: ROI & ESG")
-            self.tabs.addTab(ReportView(sav_vm, self), "TAB 5: REPORTE PDF")
+        h = "[AGRO-PREDICT 2026] Tambo San José (Rafaela, SF) | ONLINE"
+        self.header_lbl = QLabel(h, objectName="HeaderTitle")
+        tabs = self.tabs = QTabWidget(central)
+        scada = self.scada_view = ScadaView(scada_vm, self)
+        self.forecast_view = build_tabs(tabs, scada, fore_vm, sav_vm, self)
         lay.addWidget(self.header_lbl)
-        lay.addWidget(self.tabs)
-        self.setCentralWidget(central)
-        self.weather_worker, self.bot_worker = WeatherSyncWorker(self._viewmodel, parent=self), TelegramBotWorker(self._viewmodel, parent=self)
-        self.weather_worker.weather_synced.connect(self._on_weather_synced)
-        self.bot_worker.sector_state_changed.connect(self.scada_view.refresh_cards)
-        self.scada_view.sync_requested.connect(lambda: self.trigger_weather_sync("temperate"))
-        self.scada_view.demo_heatwave_requested.connect(lambda: self.trigger_weather_sync("heatwave"))
+        lay.addWidget(tabs)
+        w = self.weather_worker = WeatherSyncWorker(scada_vm, parent=self)
+        b = self.bot_worker = TelegramBotWorker(scada_vm, parent=self)
+        w.weather_synced.connect(self._on_weather_synced)
+        w.started.connect(lambda: scada.set_sync_busy(True))
+        w.finished.connect(lambda: scada.set_sync_busy(False))
+        b.sector_state_changed.connect(scada.refresh_cards)
+        sync = self.trigger_weather_sync
+        scada.sync_requested.connect(lambda: sync("temperate"))
+        scada.demo_heatwave_requested.connect(lambda: sync("heatwave"))
 
-    def trigger_weather_sync(self, profile: Optional[str] = None) -> None:
+    def trigger_weather_sync(self, profile: str | None = None) -> None:
         if profile:
             self._viewmodel.set_weather_profile(profile)
         if not self.weather_worker.isRunning():
@@ -53,7 +53,8 @@ class MainWindow(QMainWindow):
 
     def _on_weather_synced(self, resp: PredictStressResponseDTO) -> None:
         c = resp.current_conditions
-        self.header_lbl.setText(f"[AGRO-PREDICT 2026] {c.temperature_c:.1f}C | HR {c.relative_humidity:.0f}% | ITH {resp.current_thi:.1f}")
+        txt = f"[AGRO-PREDICT 2026] {c.temperature_c:.1f}C | HR {c.relative_humidity:.0f}% | ITH {resp.current_thi:.1f}"
+        self.header_lbl.setText(txt)
         self.scada_view.refresh_from_prediction(resp)
         if self.forecast_view:
             self.forecast_view.refresh_chart()
