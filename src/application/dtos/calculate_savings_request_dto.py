@@ -13,3 +13,5 @@ class CalculateSavingsRequestDTO:
     milk_price_ars: float = 430.0
     sprinkler_count: int = 25
     fan_count: int = 14
+    hours_level_1: float | None = None
+    hours_level_2: float | None = None
