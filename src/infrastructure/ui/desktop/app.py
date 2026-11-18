@@ -20,7 +20,6 @@ from src.infrastructure.reporting.pdf_sustainability_report_adapter import PdfSu
 from src.infrastructure.repositories.in_memory_sector_repo import InMemorySectorRepository
 from src.infrastructure.ui.desktop.main_window import MainWindow
 from src.infrastructure.weather_api.mock_weather_adapter import MockWeatherAdapter
-from src.infrastructure.weather_api.open_meteo_adapter import OpenMeteoAdapter
 
 QSS_PATH = Path(__file__).resolve().parent / "styles" / "dark_agro_theme.qss"
 
@@ -29,10 +28,10 @@ def build_desktop_viewmodels(
     force_heatwave: bool = False,
 ) -> tuple[ScadaViewModel, ForecastViewModel, SavingsViewModel]:
     """Construye los 3 ViewModels del escritorio con instancias compartidas."""
-    weather = MockWeatherAdapter("heatwave") if force_heatwave else OpenMeteoAdapter()
+    weather = MockWeatherAdapter("heatwave" if force_heatwave else "temperate")
     cache = SqliteWeatherCacheAdapter()
     if not cache.is_cache_valid():
-        cache.save_forecast(MockWeatherAdapter("heatwave").get_hourly_forecast(-31.25, -61.48))
+        cache.save_forecast(weather.get_hourly_forecast(-31.25, -61.48))
     repo, predictor = InMemorySectorRepository(), SklearnPredictorAdapter()
     relay, notifier = MockRelayAdapter(), TelegramNotifierAdapter()
     savings_uc = CalculateSavingsUseCase()
@@ -41,6 +40,7 @@ def build_desktop_viewmodels(
         GetFarmStatusUseCase(repo, weather),
         ToggleSectorOccupancyUseCase(repo),
         relay.emergency_shutoff_all,
+        weather.set_profile,
     )
     forecast_vm = ForecastViewModel(weather, predictor)
     savings_vm = SavingsViewModel(savings_uc, GenerateSustainabilityReportUseCase(PdfSustainabilityReportAdapter(), savings_uc))
