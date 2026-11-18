@@ -6,7 +6,7 @@
 [![Tests](https://img.shields.io/badge/Pytest-133_Passed-brightgreen?style=for-the-badge)](tests/)
 [![Python](https://img.shields.io/badge/Python-3.10_%7C_3.12_%7C_3.14-3776ab?style=for-the-badge)](requirements.txt)
 
-Software industrial de **Predicción Bioclimática por Machine Learning, Control Sanitario Anti-Mastitis y Eficiencia Hídrica/Energética ESG** para establecimientos lecheros, desarrollado para el desafío **Nestlé Conecta — AgroChallenge 2026** (*Caso Piloto: Tambo San José, Rafaela, Santa Fe, Argentina*).
+Software industrial de **Predicción Bioclimática por Machine Learning, Control Sanitario Anti-Mastitis y Eficiencia Hídrica/Energética ESG** para rodeos lecheros, desarrollado bajo **Clean Architecture en 4 Anillos** para el desafío **Nestlé Conecta — AgroChallenge 2026**.
 
 * 📄 **Especificación Técnica Maestra (SSOT):** [spec.md](spec.md)
 * 🎤 **Guion del Pitch para el Jurado (180s):** [PITCH_NESTLE_2026.md](PITCH_NESTLE_2026.md)
@@ -15,25 +15,61 @@ Software industrial de **Predicción Bioclimática por Machine Learning, Control
 
 ---
 
-## 📌 1. ¿Qué hace el sistema y qué problema resuelve?
+## 📌 1. Problemática Abordada
 
-En la cuenca lechera central de Argentina, el **estrés calórico bovino** ($\text{ITH} \ge 68\text{–}72$) provoca caídas abruptas de **$3\text{ a }5\text{ litros de leche/vaca/día}$**, inmunosupresión y caída de la tasa de concepción. Los sistemas tradicionales de enfriamiento operan mediante **temporizadores ciegos de 8 horas continuas (10:00 a 18:00 hs)** con boquillas de alto caudal ($4.9\text{ L/min}$), lo que genera:
-1. **Derroche masivo de agua subterránea y energía eléctrica** al regar corrales vacíos o en horarios sin carga térmica crítica.
-2. **Riesgo sanitario de mastitis ambiental** al humedecer camas orgánicas (*Compost Barn*) por falta de sectorización inteligente.
-3. **Reacción tardía**, cuando el animal ya acumuló inercia calórica y elevó su frecuencia respiratoria ($> 60\text{ mov/min}$).
+### 1.1 Impacto Fisiológico y Productivo del Estrés Calórico en Ganado Lechero
+Las vacas lecheras de alta producción generan una elevada carga de calor metabólico endógeno producto de la fermentación ruminal y la síntesis láctea. Según la evidencia científica reciente (*Oliveira et al., 2025*), los rodeos modernos comienzan a experimentar estrés térmico a partir de un **Índice de Temperatura y Humedad ($\text{ITH}$) de $68.0\text{ a }72.0$**, muy por debajo de los umbrales históricos:
+* **Taquipnea e Hipertermia:** Cuando la combinación de temperatura, humedad relativa y radiación solar impide disipar calor hacia el ambiente, la frecuencia respiratoria supera los $60\text{–}80\text{ movimientos/minuto}$ y la temperatura rectal se eleva por encima de $39.2\text{°C}$.
+* **Derrumbe de la Curva de Lactancia:** El animal reduce drásticamente su consumo de materia seca para limitar la termogénesis digestiva, provocando pérdidas directas de **$3.0\text{ a }5.0\text{ litros de leche por vaca por día}$**, además de depresión inmunológica y caída severa en la tasa de preñez.
+* **Inercia Calórica y Noches Tropicales:** El estrés térmico no es un fenómeno instantáneo; es acumulativo. Si durante la noche previa ($21:00\text{ a }06:00\text{ hs}$) el rodeo no dispone de al menos $6\text{ horas}$ con $\text{ITH} < 65.0$, los animales inician el día siguiente con **deuda térmica acumulada**, entrando en colapso calórico a temperaturas diurnas mucho menores.
 
-### 🚀 Innovaciones Clave de AgroPredictTambo
-* **Inferencia Predictiva ML (+1h / +2h) sin Data Leakage:** Clasificador `RandomForestClassifier` entrenado sobre **8 variables bioclimáticas** (Temperatura, Humedad Relativa, Velocidad de Viento, Radiación Solar de Onda Corta $\text{W/m}^2$, Hora del Día, Depresión de Bulbo Húmedo de Stull, Inercia Térmica Móvil de $3\text{ h}$ y Deuda Térmica Nocturna), logrando **$95.83\%$ de Accuracy** y **$100\%$ de Recall en clase Peligro** frente al $85.71\%$ del ITH estático.
-* **Sectorización Activa y Regla Sanitaria Anti-Mastitis:**
-  * **Sectores de Hormigón (`corral_espera`, `comederos`):** Ejecutan micro-ciclos evaporativos INTA Rafaela / *Chen et al. (2016)* con boquillas eficientes de **$1.3\text{ L/min}$** ($40\text{s}$ de mojado + $270\text{s}$ de ventilación forzada en Nivel 2; solo ventilación en Nivel 1).
-  * **Cama Orgánica (`sombras` / Compost Barn):** Aplica bloqueo sanitario estricto (`allows_water_sprinkling = False` $\rightarrow$ **$0\text{s}$ de agua**) activando únicamente ventilación convectiva ($270\text{s}$) incluso con $\text{ITH} > 80$ para prevenir barro y mastitis.
-  * **Corte por Desocupación (`current_occupancy = False`):** Si el rodeo abandona un sector, el sistema cancela el $100\%$ del enfriamiento en esa zona.
-* **Deuda Térmica Nocturna y Pre-enfriamiento de Ordeñe:** Evalúa el descanso nocturno previo ($21:00\text{ a }06:00\text{ hs}$); si el rodeo tuvo menos de $6\text{ horas}$ con $\text{ITH} < 65.0$, reduce automáticamente los umbrales diurnos hasta **$-3.0\text{ puntos de ITH}$**. Además, dispara pre-enfriamiento preventivo $15\text{ minutos}$ antes de los turnos de ordeñe (`04:30` y `16:00`).
-* **Resiliencia Rural Offline-First & Watchdog Físico de 60s:** Ante cortes de internet rural, conmuta transparentemente a la caché local SQLite (`SqliteWeatherCacheAdapter`) y al predictor heurístico determinístico (`HeuristicPredictorAdapter`). Los controladores de relés imponen un límite *Watchdog* de máximo $60\text{ segundos}$ continuos de válvula de agua.
+### 1.2 Deficiencias del Paradigma Tradicional de Enfriamiento en Tambos
+En la mayoría de las explotaciones lecheras, la mitigación térmica se gestiona mediante **temporizadores estáticos de 8 horas continuas ($10:00\text{ a }18:00\text{ hs}$)** o termostatos básicos que accionan bombas y ventiladores a ciegas con boquillas de alto caudal ($4.9\text{ L/min}$). Este esquema presenta tres fallas críticas:
+1. **Derroche Hídrico y Energético Masivo:** Los equipos funcionan aunque el sector esté vacío (vacas en pastoreo u ordeñe), aunque sople viento suficiente o en ventanas donde el estrés real es bajo, desperdiciando miles de litros de agua subterránea y kilowatts-hora eléctricos cada jornada.
+2. **Riesgo Sanitario Crítico de Mastitis Ambiental:** En galpones de descanso con cama orgánica (*Compost Barn* o tierra), la aspersión de agua humedece el sustrato, destruye el compostaje aeróbico y genera barro, multiplicando patógenos ambientales (*E. coli*, *Streptococcus uberis*) que disparan cuadros graves de **mastitis clínica y subclínica** y penalizaciones en calidad de leche.
+3. **Actuación Reactiva y Tardía:** Los termostatos convencionales recién disparan cuando el ambiente ya superó el umbral crítico, sin anticipar la radiación solar entrante ni la aglomeración previa al ingreso a la fosa de ordeñe.
 
 ---
 
-## 🛠️ 2. Stack Tecnológico
+## ⚙️ 2. Implementación Desarrollada
+
+**AgroPredictTambo** reemplaza el temporizador ciego por un **motor predictivo bioclimático y sanitario** que orquesta el enfriamiento de forma anticipada, sectorizada y auditable:
+
+### 2.1 Pipeline de Machine Learning sin Data Leakage e Inferencia en Dos Capas
+* **Vector de 8 Features Bioclimáticas:** El módulo [feature_builder.py](src/infrastructure/ml/feature_builder.py) construye en tiempo real un vector libre de fuga de datos compuesto por:
+  1. `temperature_c` (Temperatura de bulbo seco en $\text{°C}$).
+  2. `relative_humidity` (Humedad relativa en $\%$).
+  3. `wind_speed_kmh` (Velocidad del viento a $10\text{ m}$ para modelar alivio convectivo).
+  4. `solar_radiation_wm2` (Radiación solar de onda corta en $\text{W/m}^2$, crítica para carga radiante directa).
+  5. `hour_of_day` (Ciclo circadiano y metabólico).
+  6. `wet_bulb_depression` (Depresión de bulbo húmedo calculada mediante la ecuación trigonométrica de Stull, que mide la capacidad física real del aire para evaporar agua sobre el pelaje).
+  7. `thi_rolling_avg_3h` (Promedio móvil de ITH de las últimas $3\text{ horas}$ para capturar la inercia térmica).
+  8. `nocturnal_debt_hours` (Horas nocturnas frescas faltantes respecto al mínimo fisiológico de $6\text{ h}$).
+  *(Las columnas `thi_calculated` y `respiratory_rate_est` se excluyen estrictamente de la matriz `X` para garantizar cero data leakage).*
+* **Clasificador Random Forest + Fail-Safe Heurístico:** [SklearnPredictorAdapter](src/infrastructure/ml/sklearn_predictor_adapter.py) clasifica el nivel de estrés ($0=\text{Confort}$, $1=\text{Alerta Leve}$, $2=\text{Peligro}$) a horizonte $+1\text{h} / +2\text{h}$ con **$95.83\%$ de Accuracy** y **$100\%$ de Recall en Peligro**, acelerado por una caché LRU en memoria ([inference_lru_cache.py](src/infrastructure/ml/inference_lru_cache.py)). Si el artefacto `.joblib` no está disponible, conmuta automáticamente y sin interrupción a [HeuristicPredictorAdapter](src/infrastructure/ml/heuristic_predictor_adapter.py).
+
+### 2.2 Ajuste Dinámico por Deuda Nocturna y Pre-enfriamiento de Ordeñe
+* **Penalización por Noche Tropical ([nocturnal_recovery.py](src/domain/value_objects/nocturnal_recovery.py)):** Por cada hora nocturna que no logra bajar de $\text{ITH} = 65.0$, el sistema reduce automáticamente los umbrales diurnos de alerta y peligro en **$0.5\text{ puntos de ITH}$** (hasta un máximo de **$-3.0\text{ puntos}$**), activando la mitigación más temprano cuando las vacas no descansaron térmicamente.
+* **Pre-enfriamiento Preventivo en Corral de Espera ([milking_schedule.py](src/domain/value_objects/milking_schedule.py)):** Evalúa la cercanía a los turnos de ordeñe (`04:30–07:00` y `16:00–18:30`). Si el pronóstico proyecta peligro térmico dentro de los **$15\text{ minutos}$ previos** al inicio del ordeñe, dispara el pre-enfriamiento anticipado en el corral de espera antes del pico de hacinamiento animal.
+
+### 2.3 Sectorización Diferenciada, Micro-Ciclos Evaporativos y Bloqueo Anti-Mastitis
+El caso de uso [PredictSectorStressUseCase](src/application/use_cases/predict_sector_stress_uc.py) y el evaluador [sector_order_helper.py](src/application/use_cases/sector_order_helper.py) cruzan la predicción climática con las reglas físicas y sanitarias de cada sector ([Sector](src/domain/entities/sector.py)):
+1. **Verificación de Presencia Animal (`current_occupancy`):** Si un sector se encuentra desocupado (`False`), el sistema emite una orden inactiva (`0s` agua / `0s` ventilación), ahorrando el $100\%$ de agua y electricidad en esa zona.
+2. **Pisos de Hormigón (`corral_espera`, `comederos` — `allows_water_sprinkling = True`):**
+   * **Nivel 1 (Alerta):** Activa únicamente ventilación forzada ($270\text{s}$) para favorecer la pérdida de calor por convección sin gastar agua.
+   * **Nivel 2 (Peligro):** Ejecuta el micro-ciclo evaporativo combinado ([cooling_cycle.py](src/domain/value_objects/cooling_cycle.py)) basado en *Chen et al. (2016)* e INTA Rafaela: **$40\text{ segundos}$ de aspersión de gota gruesa con boquilla calibrada de bajo caudal ($1.3\text{ L/min}$)** para penetrar el pelaje hasta la epidermis sin escurrimiento al piso, seguidos de **$270\text{ segundos}$ de ventilación forzada ($2.5\text{–}3.0\text{ m/s}$)** para evaporar esa lámina de agua extrayendo calor latente del cuerpo de la vaca (*duty cycle* hídrico de solo **$12.90\%$**).
+3. **Cama Orgánica / Compost Barn (`sombras` — `allows_water_sprinkling = False`):**
+   * Impone en el núcleo del dominio la **Regla Sanitaria Anti-Mastitis**: jamás abre la electroválvula de agua (`water_mist_seconds = 0`) sin importar cuán extremo sea el ITH, manteniendo únicamente la ventilación forzada ($270\text{s}$) para conservar la cama seca y libre de proliferación bacteriana.
+
+### 2.4 Resiliencia Rural Offline, Seguridad de Hardware y Sincronización Multi-Interfaz
+* **Operación Offline SQLite ([sqlite_weather_cache_adapter.py](src/infrastructure/persistence/sqlite_weather_cache_adapter.py)):** Cada consulta exitosa a Open-Meteo se persiste en una base local SQLite con `auto_vacuum = INCREMENTAL` y validación de antigüedad (`TTL = 6 horas`). Ante un corte de conectividad rural, el sistema opera sin degradación sobre la caché local.
+* **Watchdog Físico de 60 Segundos ([serial_relay_adapter.py](src/infrastructure/hardware/serial_relay_adapter.py) / [mock_relay_adapter.py](src/infrastructure/hardware/mock_relay_adapter.py)):** Toda orden hacia electroválvulas pasa por un limitador de seguridad que impide aperturas continuas mayores a $60\text{ segundos}$ e incluye corte total inmediato (`emergency_shutoff_all()`).
+* **Arquitectura Reactiva Multi-Canal (SCADA PyQt6 + Bot de Telegram + CLI):** Los hilos en segundo plano (`WeatherSyncWorker`, `TelegramBotWorker` y `PdfExportWorker` sobre `QThread` / `QThreadPool`) garantizan que la interfaz de escritorio mantenga **60 fps constantes** mientras se sincroniza en menos de $100\text{ ms}$ con los comandos enviados desde los celulares a través del Bot de Telegram.
+* **Auditoría ESG y Económica ([calculate_savings_uc.py](src/application/use_cases/calculate_savings_uc.py)):** Cuantifica en tiempo real y exporta a PDF Unicode ([pdf_sustainability_report_adapter.py](src/infrastructure/reporting/pdf_sustainability_report_adapter.py)) los litros de agua ahorrados, kilowatts-hora eléctricos, kilogramos de $\text{CO}_2\text{e}$ evitados en el SADI (**Factor CAMMESA $0.35\text{ kg CO}_2\text{e/kWh}$**) y los litros de leche y pesos argentinos defendidos (**Precio de referencia SIGLeA**).
+
+---
+
+## 🛠️ 3. Stack Tecnológico
 
 | Capa / Dominio | Tecnologías y Librerías | Propósito en el Proyecto |
 | :--- | :--- | :--- |
@@ -49,7 +85,7 @@ En la cuenca lechera central de Argentina, el **estrés calórico bovino** ($\te
 
 ---
 
-## 🏛️ 3. Arquitectura Limpia en 4 Anillos (Clean Architecture)
+## 🏛️ 4. Arquitectura Limpia en 4 Anillos (Clean Architecture)
 
 El sistema implementa una separación concéntrica estricta en **4 Anillos** auditada automáticamente en cada corrida de tests por [tests/test_architecture.py](tests/test_architecture.py):
 
@@ -97,7 +133,7 @@ flowchart TD
 
 ---
 
-## 📂 4. Árbol de Archivos del Proyecto
+## 📂 5. Árbol de Archivos del Proyecto
 
 ```text
 AgroPredictTambo/
@@ -108,7 +144,7 @@ AgroPredictTambo/
 ├── requirements.txt                           # Dependencias del proyecto compatibles con Linux
 ├── pytest.ini                                 # Configuración de Pytest y markers oficiales
 ├── pyrightconfig.json                         # Configuración de chequeo estático de tipos
-├── .env.example                               # Plantilla de variables de entorno del tambo
+├── .env.example                               # Plantilla de variables de entorno
 │
 ├── src/                                       # CÓDIGO FUENTE (CLEAN ARCHITECTURE - 4 ANILLOS)
 │   ├── main.py                                # Composition Root único (--desktop, --bot, --cli, --benchmark)
@@ -141,7 +177,7 @@ AgroPredictTambo/
 │   │   │   ├── invalid_weather_exception.py   # Excepción por rango físico inválido
 │   │   │   └── sector_not_found_exception.py  # Excepción por sector inexistente
 │   │   └── fixtures/
-│   │       └── default_farm.py                # Datos semilla de Tambo San José (3 sectores)
+│   │       └── default_farm.py                # Configuración inicial de los 3 sectores del tambo
 │   │
 │   ├── application/                           # 🔵 ANILLO 2: CAPA DE APLICACIÓN (Casos de Uso y DTOs)
 │   │   ├── dtos/
@@ -253,7 +289,7 @@ AgroPredictTambo/
 
 ---
 
-## ⚙️ 5. Instalación y Configuración
+## 🔧 6. Instalación y Configuración
 
 ### 1. Clonar el repositorio y crear el entorno virtual en Linux
 ```bash
@@ -270,15 +306,15 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 Parámetros principales en `.env`:
-* `FARM_NAME="Tambo San José - Nestlé Conecta"`
-* `FARM_LATITUDE=-31.25` / `FARM_LONGITUDE=-61.48` (Rafaela, Santa Fe)
-* `DEFAULT_COW_COUNT=100` / `MILK_PRICE_ARS_PER_LITER=430.0` (Referencia SIGLeA)
-* `WEATHER_PROVIDER="open_meteo"` (`open_meteo` | `mock`)
-* `TELEGRAM_BOT_TOKEN=""` y `TELEGRAM_ADMIN_CHAT_ID=""` *(Opcional: si se deja vacío, la app de escritorio y la CLI operan normalmente en modo fail-safe)*
+* `FARM_NAME` — Nombre del establecimiento lechero.
+* `FARM_LATITUDE` / `FARM_LONGITUDE` — Coordenadas geográficas de la cuenca lechera.
+* `DEFAULT_COW_COUNT=100` / `MILK_PRICE_ARS_PER_LITER=430.0` — Tamaño del rodeo y precio por litro de referencia SIGLeA.
+* `WEATHER_PROVIDER="open_meteo"` (`open_meteo` | `mock`).
+* `TELEGRAM_BOT_TOKEN=""` y `TELEGRAM_ADMIN_CHAT_ID=""` *(Opcional: si se deja vacío, la app de escritorio y la CLI operan normalmente en modo fail-safe)*.
 
 ---
 
-## 🚀 6. Guía de Uso — Los 3 Niveles de MVP
+## 🚀 7. Guía de Uso — Los 3 Niveles de MVP
 
 El punto de entrada único [src/main.py](src/main.py) permite levantar cualquiera de las interfaces compartiendo exactamente el mismo motor de dominio y casos de uso:
 
@@ -287,7 +323,7 @@ El punto de entrada único [src/main.py](src/main.py) permite levantar cualquier
 # Iniciar Estación SCADA con perfil de demostración de Ola de Calor
 python src/main.py --desktop --demo-heatwave
 
-# Iniciar Estación SCADA conectada al clima en tiempo real (Open-Meteo Rafaela)
+# Iniciar Estación SCADA conectada al clima en tiempo real (Open-Meteo)
 python src/main.py --desktop
 ```
 **Pestañas disponibles en la estación SCADA:**
@@ -304,9 +340,9 @@ python src/main.py --desktop
 # Iniciar el Bot de Telegram en modo standalone y generar data/cache/bot_qr.png
 python src/main.py --bot --demo-heatwave
 ```
-Comandos disponibles para el productor o el jurado desde su celular:
+Comandos disponibles desde el celular:
 * `/start` o `/help` — Menú interactivo de comandos.
-* `/estado` — Condiciones meteorológicas actuales e ITH en Rafaela.
+* `/estado` — Condiciones meteorológicas actuales e ITH.
 * `/pronostico` — Proyección horaria de ITH a 24 horas.
 * `/sectores` — Estado de ocupación, piso y equipamiento de los 3 sectores.
 * `/ocupar <sector_id> <true/false>` — Simula el ingreso/egreso de vacas en vivo (ej. `/ocupar corral_espera false`) y actualiza instantáneamente la pantalla SCADA de escritorio.
@@ -330,9 +366,9 @@ python src/main.py --cli --demo-heatwave
 
 ---
 
-## 📊 7. Impacto Auditado de Sustentabilidad ESG y Retorno Productivo
+## 📊 8. Impacto Auditado de Sustentabilidad ESG y Retorno Productivo
 
-Resultados verificados en el benchmark de 24 horas para el caso piloto (**100 vacas en ordeñe**, operación predictiva focalizada de $3.5\text{ h}$ frente al régimen tradicional continuo de $8.0\text{ h}$):
+Resultados verificados en el benchmark de 24 horas (**100 vacas en ordeñe**, operación predictiva focalizada de $3.5\text{ h}$ frente al régimen tradicional continuo de $8.0\text{ h}$):
 
 | Indicador Auditado | Régimen Tradicional (8h Fijas) | Sistema Predictivo AgroPredictTambo | Impacto Neto Verificado |
 | :--- | :---: | :---: | :--- |
@@ -344,7 +380,7 @@ Resultados verificados en el benchmark de 24 horas para el caso piloto (**100 va
 
 ---
 
-## 🧪 8. Suite de Pruebas Automatizadas y Auditoría de Calidad
+## 🧪 9. Suite de Pruebas Automatizadas y Auditoría de Calidad
 
 El repositorio cuenta con **133 pruebas automatizadas** divididas en `unit`, `architecture`, `integration` y `e2e`:
 
@@ -364,7 +400,7 @@ QT_QPA_PLATFORM=offscreen .venv/bin/pytest -m e2e -v
 
 ---
 
-## 📚 9. Respaldo Científico y Bibliografía
+## 📚 10. Respaldo Científico y Bibliografía
 
 1. **Oliveira, C. P., et al. (2025).** *Heat Stress in Dairy Cows: Impacts, Identification, and Mitigation Strategies—A Review*. Animals, 15(2), 249. https://doi.org/10.3390/ani15020249
 2. **Chen, J. M., Schütz, K. E., & Tucker, C. B. (2016).** *Cooling cows in the feeding alley: Different sprinkler flow rates*. Journal of Dairy Science, 99(8), 6470–6481. *(Demostración experimental de que $1.3\text{ L/min}$ logra igual abatimiento térmico que $4.9\text{ L/min}$ reduciendo un $73.5\%$ el uso de agua).*
