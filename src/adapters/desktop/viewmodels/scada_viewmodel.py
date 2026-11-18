@@ -19,12 +19,17 @@ class ScadaViewModel:
     def __init__(
         self, predict_uc: PredictSectorStressUseCase, status_uc: GetFarmStatusUseCase,
         toggle_uc: ToggleSectorOccupancyUseCase, shutoff_fn: Optional[Callable[[], None]] = None,
+        profile_fn: Optional[Callable[[str], None]] = None,
     ) -> None:
         self._predict_uc, self._status_uc = predict_uc, status_uc
         self._toggle_uc, self._shutoff_fn = toggle_uc, shutoff_fn
+        self._profile_fn = profile_fn
+
+    def set_weather_profile(self, profile: str) -> None:
+        if self._profile_fn:
+            self._profile_fn(profile)
 
     def get_cards_state(self, lat: float = -31.25, lon: float = -61.48) -> list[dict[str, Any]]:
-        """Devuelve diccionarios listos para renderizar en cada SectorCardWidget."""
         cards: list[dict[str, Any]] = []
         for s in self._status_uc.execute(lat, lon):
             cyc = CoolingCycle.for_stress_level(s.current_stress_level, s.allows_water_sprinkling)
