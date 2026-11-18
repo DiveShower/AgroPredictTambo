@@ -2,19 +2,16 @@
 
 from typing import Any
 
-import requests
-
 from src.domain.ports.weather_provider_port import IWeatherProvider
 from src.domain.value_objects.weather_conditions import WeatherConditions
+from src.infrastructure.weather_api.http_retry_client import get_with_retry
 from src.infrastructure.weather_api.weather_api_mapper import (
     parse_current_weather,
     parse_hourly_forecast,
 )
 
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
-WEATHER_VARS = (
-    "temperature_2m,relative_humidity_2m,wind_speed_10m,shortwave_radiation"
-)
+WEATHER_VARS = "temperature_2m,relative_humidity_2m,wind_speed_10m,shortwave_radiation"
 
 
 class OpenMeteoAdapter(IWeatherProvider):
@@ -36,11 +33,7 @@ class OpenMeteoAdapter(IWeatherProvider):
             "hourly": WEATHER_VARS,
             "timezone": "America/Argentina/Cordoba",
         }
-        response = requests.get(
-            self._base_url, params=params, timeout=self._timeout
-        )
-        response.raise_for_status()
-        return dict(response.json())
+        return get_with_retry(self._base_url, params=params, timeout=self._timeout)
 
     def get_current_weather(self, lat: float, lon: float) -> WeatherConditions:
         """Obtiene las condiciones meteorológicas actuales para las coordenadas."""
