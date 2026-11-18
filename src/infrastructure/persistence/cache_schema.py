@@ -31,3 +31,6 @@ ORDER BY id ASC;
 SELECT_LATEST_SAVED_AT_SQL = """
 SELECT saved_at FROM weather_forecast_cache ORDER BY id DESC LIMIT 1;
 """
+
+INIT_AUTO_VACUUM_SQL = "PRAGMA auto_vacuum = 2;"
+INCREMENTAL_VACUUM_SQL = "PRAGMA incremental_vacuum;"
