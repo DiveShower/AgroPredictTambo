@@ -21,10 +21,11 @@ def run_cli(
     benchmark_mode: bool = False,
     input_fn: Callable[[str], str] = input,
     output_fn: Callable[[str], None] = print,
+    export_json_path: str | None = None,
 ) -> int:
     """Inicia la interfaz de línea de comandos o ejecuta la corrida benchmark."""
     if benchmark_mode:
-        output_fn(controller.handle_benchmark())
+        output_fn(controller.handle_benchmark(export_path=export_json_path))
         return 0
 
     setup_cli_autocomplete()
