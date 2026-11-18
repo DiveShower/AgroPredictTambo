@@ -15,12 +15,12 @@ from src.domain.value_objects.resource_savings import ResourceSavings
 class CalculateSavingsUseCase:
     """Modela la reducción de consumo frente al sistema tradicional continuo de 8h."""
 
-    def __init__(self, cycle_config: CoolingCycle = CoolingCycle()) -> None:
+    def __init__(self, cycle_config: CoolingCycle = CoolingCycle()) -> None:  # noqa: B008
         self._cfg = cycle_config
 
     def execute(
         self,
-        request: CalculateSavingsRequestDTO = CalculateSavingsRequestDTO(),
+        request: CalculateSavingsRequestDTO = CalculateSavingsRequestDTO(),  # noqa: B008
     ) -> CalculateSavingsResponseDTO:
         """Calcula el balance comparativo entre el sistema tradicional y el predictivo."""
         base_h = max(0.0, request.baseline_operating_hours)
@@ -45,8 +45,10 @@ class CalculateSavingsUseCase:
             predictive_energy_kwh=pred_h * cycle_kw,
         )
         carbon = CarbonFootprint.from_energy_savings(savings.energy_saved_kwh)
-        h_alert = int(pred_h)
-        h_danger = max(1, h_alert // 2) if h_alert > 0 else 0
+        h1, h2 = request.hours_level_1, request.hours_level_2
+        h_alert = int(h1 if h1 is not None else pred_h)
+        fallback_h2 = max(1, h_alert // 2) if h_alert > 0 else 0
+        h_danger = int(h2 if h2 is not None else fallback_h2)
         economic = EconomicImpact.calculate(
             cow_count=request.cow_count,
             hours_alert_mitigated=h_alert,
