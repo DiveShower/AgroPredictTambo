@@ -14,13 +14,12 @@ from src.domain.value_objects.weather_conditions import WeatherConditions
 def test_toggle_sector_occupancy_updates_and_returns_sector(mocker: Any) -> None:
     repo = mocker.Mock()
     updated = Sector("corral_espera", "Corral", 80, False)
-    repo.get_by_id.return_value = updated
+    repo.update_occupancy.return_value = updated
 
     uc = ToggleSectorOccupancyUseCase(repo)
     res = uc.execute("corral_espera", False)
 
     repo.update_occupancy.assert_called_once_with("corral_espera", False)
-    repo.get_by_id.assert_called_once_with("corral_espera")
     assert res.current_occupancy is False
 
 
