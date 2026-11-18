@@ -27,6 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="AgroChallenge 2026 - Estrés Térmico")
     for flag in ("--desktop", "--bot", "--cli", "--demo-heatwave", "--benchmark"):
         p.add_argument(flag, action="store_true")
+    p.add_argument("--export-json", type=str, default=None)
     args = p.parse_args(argv)
     if args.desktop:
         from src.infrastructure.ui.desktop.app import run_desktop_app
@@ -37,7 +38,9 @@ def main(argv: list[str] | None = None) -> int:
 
         return run_bot(force_heatwave=args.demo_heatwave)
     ctrl = build_cli_controller(force_heatwave=args.demo_heatwave or args.benchmark)
-    return run_cli(ctrl, benchmark_mode=args.benchmark)
+    return run_cli(
+        ctrl, benchmark_mode=args.benchmark, export_json_path=args.export_json
+    )
 
 
 if __name__ == "__main__":
