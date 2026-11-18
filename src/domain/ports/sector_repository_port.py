@@ -16,6 +16,6 @@ class ISectorRepository(Protocol):
         """Busca y retorna un sector por su identificador único."""
         ...
 
-    def update_occupancy(self, sector_id: str, is_occupied: bool) -> None:
-        """Actualiza el estado de ocupación animal de un sector."""
+    def update_occupancy(self, sector_id: str, is_occupied: bool) -> Sector:
+        """Actualiza la ocupación animal de un sector y retorna la entidad Sector actualizada."""
         ...
