@@ -1,25 +1,15 @@
 """Inicializador de QApplication, hoja de estilo QSS y ventana SCADA completa."""
 
-from pathlib import Path
 import sys
-from typing import Optional
+from pathlib import Path
+
 from PyQt6.QtWidgets import QApplication
+
 from src.adapters.desktop.viewmodels.forecast_viewmodel import ForecastViewModel
 from src.adapters.desktop.viewmodels.savings_viewmodel import SavingsViewModel
 from src.adapters.desktop.viewmodels.scada_viewmodel import ScadaViewModel
-from src.application.use_cases.calculate_savings_uc import CalculateSavingsUseCase
-from src.application.use_cases.generate_sustainability_report_uc import GenerateSustainabilityReportUseCase
-from src.application.use_cases.get_farm_status_uc import GetFarmStatusUseCase
-from src.application.use_cases.predict_sector_stress_uc import PredictSectorStressUseCase
-from src.application.use_cases.toggle_sector_occupancy_uc import ToggleSectorOccupancyUseCase
-from src.infrastructure.hardware.mock_relay_adapter import MockRelayAdapter
-from src.infrastructure.ml.sklearn_predictor_adapter import SklearnPredictorAdapter
-from src.infrastructure.notifications.telegram_notifier_adapter import TelegramNotifierAdapter
-from src.infrastructure.persistence.sqlite_weather_cache_adapter import SqliteWeatherCacheAdapter
-from src.infrastructure.reporting.pdf_sustainability_report_adapter import PdfSustainabilityReportAdapter
-from src.infrastructure.repositories.in_memory_sector_repo import InMemorySectorRepository
+from src.infrastructure.ioc_container import AppContainer
 from src.infrastructure.ui.desktop.main_window import MainWindow
-from src.infrastructure.weather_api.mock_weather_adapter import MockWeatherAdapter
 
 QSS_PATH = Path(__file__).resolve().parent / "styles" / "dark_agro_theme.qss"
 
@@ -27,27 +17,23 @@ QSS_PATH = Path(__file__).resolve().parent / "styles" / "dark_agro_theme.qss"
 def build_desktop_viewmodels(
     force_heatwave: bool = False,
 ) -> tuple[ScadaViewModel, ForecastViewModel, SavingsViewModel]:
-    """Construye los 3 ViewModels del escritorio con instancias compartidas."""
-    weather = MockWeatherAdapter("heatwave" if force_heatwave else "temperate")
-    cache = SqliteWeatherCacheAdapter()
-    if not cache.is_cache_valid():
-        cache.save_forecast(weather.get_hourly_forecast(-31.25, -61.48))
-    repo, predictor = InMemorySectorRepository(), SklearnPredictorAdapter()
-    relay, notifier = MockRelayAdapter(), TelegramNotifierAdapter()
-    savings_uc = CalculateSavingsUseCase()
+    """Construye los 3 ViewModels del escritorio mediante AppContainer."""
+    c = AppContainer(force_heatwave=force_heatwave)
     scada_vm = ScadaViewModel(
-        PredictSectorStressUseCase(weather, repo, predictor, notifier, relay, cache),
-        GetFarmStatusUseCase(repo, weather),
-        ToggleSectorOccupancyUseCase(repo),
-        relay.emergency_shutoff_all,
-        weather.set_profile,
+        c.predict_uc,
+        c.status_uc,
+        c.toggle_uc,
+        c.relay.emergency_shutoff_all,
+        getattr(c.weather, "set_profile", lambda _: None),
     )
-    forecast_vm = ForecastViewModel(weather, predictor)
-    savings_vm = SavingsViewModel(savings_uc, GenerateSustainabilityReportUseCase(PdfSustainabilityReportAdapter(), savings_uc))
+    forecast_vm = ForecastViewModel(c.weather, c.predictor)
+    savings_vm = SavingsViewModel(c.savings_uc, c.report_uc)
     return scada_vm, forecast_vm, savings_vm
 
 
-def run_desktop_app(force_heatwave: bool = False, viewmodel: Optional[ScadaViewModel] = None) -> int:
+def run_desktop_app(
+    force_heatwave: bool = False, viewmodel: ScadaViewModel | None = None
+) -> int:
     app = QApplication.instance() or QApplication(sys.argv)
     if isinstance(app, QApplication) and QSS_PATH.exists():
         app.setStyleSheet(QSS_PATH.read_text(encoding="utf-8"))
