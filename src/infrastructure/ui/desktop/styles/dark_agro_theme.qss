@@ -12,6 +12,9 @@ QFrame#SectorCard {
     border-radius: 8px;
     padding: 10px;
 }
+QFrame#SectorCard[stressLevel="0"] { border: 2px solid #2ecc71; }
+QFrame#SectorCard[stressLevel="1"] { border: 2px solid #f1c40f; }
+QFrame#SectorCard[stressLevel="2"] { border: 2px solid #e74c3c; }
 
 QFrame#ThiGauge {
     background-color: #1b2430;
@@ -35,17 +38,10 @@ QPushButton {
     font-weight: bold;
 }
 
-QPushButton:hover {
-    background-color: #3498db;
-}
+QPushButton:hover { background-color: #3498db; }
+QPushButton#EmergencyBtn { background-color: #c0392b; }
 
-QPushButton#EmergencyBtn {
-    background-color: #c0392b;
-}
-
-QTabWidget::pane {
-    border: 1px solid #2c3e50;
-}
+QTabWidget::pane { border: 1px solid #2c3e50; }
 
 QTabBar::tab {
     background-color: #1b2430;
