@@ -47,7 +47,8 @@ def train_and_evaluate(
         model, x_tr, y_tr, x_te, y_te, thi_te, fb.FEATURE_COLUMNS
     )
     artifacts_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, artifacts_dir / "heat_stress_classifier.joblib")
+    model_path = artifacts_dir / "heat_stress_classifier.joblib"
+    joblib.dump(model, model_path, compress=("zlib", 3))  # type: ignore[arg-type]
     out = artifacts_dir / "training_report.json"
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
