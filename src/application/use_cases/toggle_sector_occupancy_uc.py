@@ -12,5 +12,4 @@ class ToggleSectorOccupancyUseCase:
 
     def execute(self, sector_id: str, is_occupied: bool) -> Sector:
         """Modifica la ocupación del sector y devuelve la entidad actualizada."""
-        self._sector_repo.update_occupancy(sector_id, is_occupied)
-        return self._sector_repo.get_by_id(sector_id)
+        return self._sector_repo.update_occupancy(sector_id, is_occupied)
