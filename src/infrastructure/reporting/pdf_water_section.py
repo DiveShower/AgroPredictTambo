@@ -41,7 +41,7 @@ def write_comparison_table(
         _R0,
         ("Agua diaria (L)", f"{lw:,.1f} L", f"{bw:,.1f} L", w3),
         ("Energía (kWh/día)", "N/D", f"{be:.2f} kWh", e3),
-        ("Emisiones CAMMESA", "—", f"{be * f:.2f} kg", c3),
+        ("Emisiones CAMMESA", "-", f"{be * f:.2f} kg", c3),
     )
     for i, row in enumerate(rows):
         bg = th.WHITE if i % 2 == 0 else th.ROW_ALT
