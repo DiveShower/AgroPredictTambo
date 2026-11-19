@@ -52,5 +52,5 @@ class AppContainer:
         self.toggle_uc = ToggleSectorOccupancyUseCase(self.repo)
         self.status_uc = GetFarmStatusUseCase(self.repo, self.weather)
         self.report_uc = GenerateSustainabilityReportUseCase(
-            PdfSustainabilityReportAdapter(), self.savings_uc
+            PdfSustainabilityReportAdapter(), self.savings_uc, self.repo, self.weather
         )
