@@ -47,12 +47,3 @@ def write_comparison_table(
         bg = th.WHITE if i % 2 == 0 else th.ROW_ALT
         cols = _cols(row, bg, th.TEXT_DARK, (th.TINT_GREEN, th.AGRO_GREEN))
         draw_table_row(pdf, font, 94.5 + i * 6.0, 6.0, cols, size=7.5)
-
-
-def write_header_and_water(
-    pdf: FPDF, font: str, farm: str, date: str, s: ResourceSavings
-) -> None:
-    """Wrapper temporal hasta migrar el adaptador PDF en el paso B.9."""
-    _ = (farm, date)
-    carbon = CarbonFootprint.from_energy_savings(s.energy_saved_kwh)
-    write_comparison_table(pdf, font, s, carbon)
