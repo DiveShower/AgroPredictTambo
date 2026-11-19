@@ -2,10 +2,8 @@
 
 from fpdf import FPDF
 
-from src.domain.value_objects.carbon_footprint import CarbonFootprint
 from src.domain.value_objects.economic_impact import EconomicImpact
 from src.domain.value_objects.report_audit_context import ReportAuditContext
-from src.domain.value_objects.resource_savings import ResourceSavings
 from src.infrastructure.reporting import pdf_layout as ly
 from src.infrastructure.reporting import pdf_theme as th
 
@@ -49,10 +47,3 @@ def write_thermal_and_footer(
     ly.draw_text(pdf, font, mx, 276.0, epw, 4.0, foot, 7.0, tm)
     ly.draw_text(pdf, font, mx, 276.0, epw, 4.0, "Página 1 de 1", 7.0, tm, "", "R")
     pdf.set_auto_page_break(apb, bm)
-
-
-def write_energy_and_carbon(
-    pdf: FPDF, font: str, s: ResourceSavings, c: CarbonFootprint
-) -> None:
-    """Stub temporal hasta migrar el adaptador PDF en el paso B.10."""
-    _ = (pdf, font, s, c)
